@@ -1,0 +1,80 @@
+<idea-plugin>
+    <id>com.labelixa.zpl</id>
+    <name>Labelixa ZPL</name>
+    <vendor url="https://labelixa.com" email="support@labelixa.com">Labelixa</vendor>
+
+    <description><![CDATA[
+    See the Zebra <b>ZPL</b> label you are editing &mdash; rendered, without a
+    printer &mdash; and get the label checked with real line and column
+    positions.
+    <ul>
+      <li><b>Preview the label under the cursor.</b> Put the caret inside a
+      <code>^XA &hellip; ^XZ</code> block and run <i>Labelixa: Preview Label
+      Under Cursor</i>. The block is rendered by the Labelixa API at the
+      printer's real resolution and shown in the Labelixa Preview tool window.</li>
+      <li><b>Validate.</b> <i>Labelixa: Validate ZPL</i> checks the whole file:
+      unknown commands, unterminated fields, out-of-range parameters and more,
+      each with its line and column and a link to the rule page. Findings that
+      carry a fix offer it as a quick-fix.</li>
+      <li><b>Optional lint while typing</b> (off by default) re-checks the file
+      as you edit.</li>
+      <li>Syntax highlighting for <code>.zpl</code> files.</li>
+    </ul>
+    Works without an account (anonymous use is rate limited). An API key can
+    be added in <i>Settings &rarr; Tools &rarr; Labelixa</i> and is kept in the
+    IDE's password safe. Nothing is sent to the API until you run an action or
+    turn on lint while typing.
+    ]]></description>
+
+    <change-notes><![CDATA[
+    <h3>0.1.0</h3>
+    <ul>
+      <li>ZPL file type with syntax highlighting.</li>
+      <li>Preview the label under the cursor in a tool window.</li>
+      <li>Validate ZPL with positioned findings, rule links and quick-fixes.</li>
+      <li>Settings: API key (password safe), base URL, print density and label size, lint while typing.</li>
+    </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="ZPL"
+                  implementationClass="com.labelixa.jetbrains.ZplFileType"
+                  fieldName="INSTANCE"
+                  language="ZPL"
+                  extensions="zpl"/>
+        <lang.syntaxHighlighterFactory language="ZPL"
+                  implementationClass="com.labelixa.jetbrains.ZplSyntaxHighlighterFactory"/>
+        <externalAnnotator language="ZPL"
+                  implementationClass="com.labelixa.jetbrains.ZplExternalAnnotator"/>
+        <toolWindow id="Labelixa Preview"
+                    anchor="right"
+                    icon="AllIcons.FileTypes.Image"
+                    factoryClass="com.labelixa.jetbrains.PreviewToolWindowFactory"/>
+        <applicationConfigurable parentId="tools"
+                                 instance="com.labelixa.jetbrains.LabelixaConfigurable"
+                                 id="com.labelixa.jetbrains.settings"
+                                 displayName="Labelixa"/>
+        <notificationGroup id="Labelixa" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <action id="Labelixa.Preview"
+                class="com.labelixa.jetbrains.PreviewAction"
+                text="Labelixa: Preview Label Under Cursor"
+                description="Render the ^XA…^XZ block under the caret with the Labelixa API">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift P"/>
+        </action>
+        <action id="Labelixa.Validate"
+                class="com.labelixa.jetbrains.ValidateAction"
+                text="Labelixa: Validate ZPL"
+                description="Check the file with the Labelixa API and show findings in the editor">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift V"/>
+        </action>
+    </actions>
+</idea-plugin>
