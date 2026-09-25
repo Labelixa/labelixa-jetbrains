@@ -5,6 +5,17 @@ documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-09-25
+
+### Fixed
+- **Labelixa: Validate ZPL** was missing from the Tools and editor context
+  menus, and validation findings were never shown in the editor. `.zpl`
+  files had no parser definition, so the platform opened them as plain
+  text and every ZPL-language extension (the external annotator, the
+  validate action's language check) was skipped. A minimal parser
+  definition now gives the file the ZPL language; the API still does the
+  real parsing. Lint while typing works for the same reason.
+
 ## [0.1.0] - 2026-09-23
 
 ### Added

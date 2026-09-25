@@ -27,6 +27,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <h3>0.1.1</h3>
+    <ul>
+      <li>Fixed: <b>Labelixa: Validate ZPL</b> was missing from the Tools and editor menus and validation findings were never shown, because <code>.zpl</code> files were opened as plain text underneath. Files now carry the ZPL language; lint while typing works too.</li>
+    </ul>
     <h3>0.1.0</h3>
     <ul>
       <li>ZPL file type with syntax highlighting.</li>
@@ -44,6 +48,8 @@
                   fieldName="INSTANCE"
                   language="ZPL"
                   extensions="zpl"/>
+        <lang.parserDefinition language="ZPL"
+                  implementationClass="com.labelixa.jetbrains.ZplParserDefinition"/>
         <lang.syntaxHighlighterFactory language="ZPL"
                   implementationClass="com.labelixa.jetbrains.ZplSyntaxHighlighterFactory"/>
         <externalAnnotator language="ZPL"

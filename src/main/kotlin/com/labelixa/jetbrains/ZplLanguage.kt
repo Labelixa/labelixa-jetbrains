@@ -8,9 +8,10 @@ import javax.swing.Icon
 object ZplLanguage : Language("ZPL")
 
 /**
- * `.zpl` files. No parser is registered on purpose: the file stays plain
- * text underneath, and the lexer below only paints commands and comments.
- * The API does the real parsing; a second grammar in the editor would be a
+ * `.zpl` files. The parser definition (ZplParserDefinition) is deliberately
+ * flat: one leaf per lexer token, no grammar. It exists so the file carries
+ * the ZPL language (the annotator and the validate action key off it); the
+ * API does the real parsing, a second grammar in the editor would be a
  * second source of truth that drifts.
  */
 // A Kotlin `object` already exposes a static `INSTANCE` field, which is what
