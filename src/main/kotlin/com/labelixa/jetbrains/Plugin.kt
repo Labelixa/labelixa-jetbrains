@@ -15,7 +15,7 @@ object Plugin {
 
     fun client(): LabelixaClient {
         val s = LabelixaSettings.get()
-        return LabelixaClient(s.apiKey, s.baseUrl, version)
+        return LabelixaClient(s.apiKey, s.baseUrl, version, s.keyOrigin)
     }
 
     fun notify(project: Project?, text: String, type: NotificationType = NotificationType.WARNING) {

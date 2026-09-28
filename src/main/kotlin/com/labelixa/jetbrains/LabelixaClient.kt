@@ -22,18 +22,34 @@ class LabelixaException(val status: Int, val serverMessage: String, val retryAft
  * here; the repository tests lock the path strings to the SDK's, so a
  * contract drift breaks a test instead of silently rotting the published
  * plugin.
+ *
+ * Where the key goes: requests go only to an https base URL (plain http
+ * only for localhost), redirects are never followed, and the `X-API-Key`
+ * header is added only when [Core.sendKey] allows it for this base URL.
  */
 class LabelixaClient(
     apiKey: String?,
     baseUrl: String = Core.DEFAULT_BASE_URL,
     private val version: String = "0.0.0",
-    private val http: HttpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(15))
-        .followRedirects(HttpClient.Redirect.NORMAL)
-        .build(),
+    /** The origin the user allowed the key to go to in the settings; see [Core.sendKey]. */
+    optedInKeyOrigin: String = "",
+    private val http: HttpClient = newHttpClient(),
 ) {
-    private val base = baseUrl.trimEnd('/')
-    private val apiKey = apiKey?.trim()?.takeIf { it.isNotEmpty() }
+    private val base = baseUrl.trim().trimEnd('/')
+    private val problem = Core.baseUrlProblem(base)
+    private val apiKey = apiKey?.trim()?.takeIf { it.isNotEmpty() && Core.sendKey(base, optedInKeyOrigin) }
+
+    init {
+        // A client that follows redirects would carry the X-API-Key header to
+        // wherever the redirect points: Java's HttpClient re-sends custom
+        // headers on a redirect to another host, and to plain http.
+        require(this.apiKey == null || http.followRedirects() == HttpClient.Redirect.NEVER) {
+            "an HttpClient that follows redirects must not carry the API key"
+        }
+    }
+
+    /** True when requests carry the API key. */
+    val sendsKey: Boolean get() = apiKey != null
 
     private fun request(path: String): HttpRequest.Builder {
         val b = HttpRequest.newBuilder(URI.create(base + path))
@@ -45,11 +61,18 @@ class LabelixaClient(
     }
 
     private fun post(path: String, body: String): HttpResponse<ByteArray> {
+        if (problem != null) throw IOException(problem)
         val req = request(path)
             .header("Content-Type", "text/plain; charset=utf-8")
             .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
             .build()
         val res = http.send(req, HttpResponse.BodyHandlers.ofByteArray())
+        if (res.statusCode() in 300..399) {
+            // The API never redirects. Following one would send the label
+            // (and the key) to an address nobody configured, so it is an error.
+            val to = res.headers().firstValue("Location").orElse("?").take(200)
+            throw LabelixaException(res.statusCode(), "redirect to $to not followed; check the base URL")
+        }
         if (res.statusCode() != 200) {
             val text = String(res.body(), StandardCharsets.UTF_8).take(500)
             val retry = res.headers().firstValue("Retry-After").orElse("60").toIntOrNull() ?: 60
@@ -75,3 +98,9 @@ class LabelixaClient(
         return String(post(Core.DIAGNOSTICS_PATH + q, zpl).body(), StandardCharsets.UTF_8)
     }
 }
+
+/** The plugin's HTTP client: redirects are never followed (see [LabelixaClient]). */
+fun newHttpClient(): HttpClient = HttpClient.newBuilder()
+    .connectTimeout(Duration.ofSeconds(15))
+    .followRedirects(HttpClient.Redirect.NEVER)
+    .build()

@@ -3,6 +3,8 @@ package com.labelixa.jetbrains
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import java.net.URI
+import java.net.URISyntaxException
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -26,6 +28,85 @@ object Core {
     fun renderPath(dpmm: Int, widthIn: Double, heightIn: Double, index: Int): String =
         "/v1/printers/${dpmm}dpmm/labels/${g(widthIn)}x${g(heightIn)}/$index"
     const val DIAGNOSTICS_PATH = "/v1/diagnostics"
+
+    // ------------------------------------------------------ key and base URL --
+
+    /**
+     * Hosts the API key is sent to without an opt-in: the hosted API and the
+     * site (the same list as the VS Code extension). Any other address is
+     * somebody's own installation or a proxy; the key goes there only after
+     * the user has opted in for that exact origin in the settings.
+     */
+    val TRUSTED_KEY_HOSTS = setOf("api.labelixa.com", "labelixa.com", "staging.labelixa.com")
+
+    /**
+     * - TRUSTED: https on a Labelixa host with the default port.
+     * - OPT_IN: another usable base URL (another https host, or plain http on
+     *   this machine) — the key goes only to the origin the user opted in to.
+     * - REFUSE: not a usable base URL (see [baseUrlProblem]); nothing is sent.
+     */
+    enum class KeyPolicy { TRUSTED, OPT_IN, REFUSE }
+
+    fun isLoopback(host: String): Boolean {
+        val h = host.lowercase().removePrefix("[").removeSuffix("]")
+        return h == "localhost" || h == "::1" || Regex("^127(\\.\\d{1,3}){3}$").matches(h)
+    }
+
+    private fun parse(baseUrl: String): URI? = try {
+        URI(baseUrl.trim())
+    } catch (e: URISyntaxException) {
+        null
+    }
+
+    /**
+     * Why `baseUrl` must not be used, or `null` when it is fine.
+     *
+     * Plain http is accepted only for this machine: anywhere else the label
+     * text (and the API key) would travel readable on the network. A URL
+     * with user info is refused too — `https://api.labelixa.com@evil.test`
+     * reads like the API but talks to another host.
+     */
+    fun baseUrlProblem(baseUrl: String): String? {
+        val u = parse(baseUrl)
+        val host = u?.host
+        if (u == null || u.scheme == null || host.isNullOrEmpty()) {
+            return "The base URL \"$baseUrl\" is not a valid URL."
+        }
+        if (u.rawUserInfo != null) return "The base URL must not contain a user name or password."
+        val scheme = u.scheme.lowercase()
+        if (scheme == "https") return null
+        if (scheme == "http" && isLoopback(host)) return null
+        return "The base URL must use https (plain http is allowed only for localhost)."
+    }
+
+    fun keyPolicy(baseUrl: String): KeyPolicy {
+        if (baseUrlProblem(baseUrl) != null) return KeyPolicy.REFUSE
+        val u = parse(baseUrl)!!
+        return if (u.scheme.lowercase() == "https" && u.host.lowercase() in TRUSTED_KEY_HOSTS && u.port == -1) {
+            KeyPolicy.TRUSTED
+        } else {
+            KeyPolicy.OPT_IN
+        }
+    }
+
+    /** `scheme://host[:port]`, lower case; "" when not a URL. The opt-in is stored per origin. */
+    fun keyOrigin(baseUrl: String): String {
+        val u = parse(baseUrl) ?: return ""
+        val scheme = u.scheme?.lowercase() ?: return ""
+        val host = u.host?.lowercase() ?: return ""
+        return if (u.port == -1) "$scheme://$host" else "$scheme://$host:${u.port}"
+    }
+
+    /**
+     * Is the API key sent to `baseUrl`? `optedInOrigin` is the origin the
+     * user explicitly allowed in the settings. Changing the base URL to
+     * another origin does not carry the opt-in over.
+     */
+    fun sendKey(baseUrl: String, optedInOrigin: String): Boolean = when (keyPolicy(baseUrl)) {
+        KeyPolicy.TRUSTED -> true
+        KeyPolicy.OPT_IN -> optedInOrigin.isNotEmpty() && optedInOrigin == keyOrigin(baseUrl)
+        KeyPolicy.REFUSE -> false
+    }
 
     /** Python `:g` formatting: 4.0 -> "4", 2.25 -> "2.25" (same rule as the SDKs). */
     fun g(n: Double): String =

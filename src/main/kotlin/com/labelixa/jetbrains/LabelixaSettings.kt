@@ -31,6 +31,13 @@ class LabelixaSettings : PersistentStateComponent<LabelixaSettings.State> {
         var widthIn: String = "4"
         var heightIn: String = "6"
         var lintWhileTyping: Boolean = false
+
+        /**
+         * The one non-Labelixa origin the user allowed the API key to go
+         * to; "" = none. Stored as an origin, not a yes/no, so pointing the
+         * base URL somewhere else later does not carry the permission over.
+         */
+        var keyOrigin: String = ""
     }
 
     private var state = State()
@@ -43,6 +50,7 @@ class LabelixaSettings : PersistentStateComponent<LabelixaSettings.State> {
     val widthIn: Double get() = state.widthIn.trim().toDoubleOrNull() ?: 4.0
     val heightIn: Double get() = state.heightIn.trim().toDoubleOrNull() ?: 6.0
     val lintWhileTyping: Boolean get() = state.lintWhileTyping
+    val keyOrigin: String get() = state.keyOrigin
 
     var apiKey: String
         get() = PasswordSafe.instance.getPassword(credentialAttributes()) ?: ""
@@ -60,6 +68,19 @@ class LabelixaSettings : PersistentStateComponent<LabelixaSettings.State> {
 }
 
 class LabelixaConfigurable : BoundConfigurable("Labelixa") {
+    /** The checkbox value, turned into an origin in [apply] once the base URL is saved. */
+    private var sendKeyToCustomUrl = false
+
+    override fun apply() {
+        super.apply()
+        val st = LabelixaSettings.get().state
+        st.keyOrigin = if (sendKeyToCustomUrl && Core.keyPolicy(st.baseUrl) == Core.KeyPolicy.OPT_IN) {
+            Core.keyOrigin(st.baseUrl)
+        } else {
+            ""
+        }
+    }
+
     override fun createPanel(): DialogPanel {
         val s = LabelixaSettings.get()
         val st = s.state
@@ -73,6 +94,18 @@ class LabelixaConfigurable : BoundConfigurable("Labelixa") {
             }
             row("Base URL:") {
                 textField().columns(40).bindText(st::baseUrl)
+                    .comment("https only (plain http only for localhost). Redirects are not followed.")
+            }
+            row {
+                checkBox("Send the API key to this base URL even though it is not a Labelixa address")
+                    .bindSelected(
+                        { st.keyOrigin.isNotEmpty() && st.keyOrigin == Core.keyOrigin(st.baseUrl) },
+                        { sendKeyToCustomUrl = it },
+                    )
+                    .comment("The key goes to api.labelixa.com, labelixa.com and staging.labelixa.com " +
+                        "without asking. Any other address gets requests without the key unless this " +
+                        "is ticked; the permission is for this exact address and is dropped when the " +
+                        "base URL changes.")
             }
             row("Print density (dots/mm):") {
                 intTextField(range = 6..24).bindIntText(st::dpmm)

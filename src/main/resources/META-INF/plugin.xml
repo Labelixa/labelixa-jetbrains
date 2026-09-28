@@ -27,6 +27,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <h3>0.1.2</h3>
+    <ul>
+      <li>Security: redirects are no longer followed, so the API key cannot be carried to another host.</li>
+      <li>Security: the base URL must use https (plain http only for localhost).</li>
+      <li>Security: the API key goes only to Labelixa addresses unless you allow your own base URL in the settings.</li>
+    </ul>
     <h3>0.1.1</h3>
     <ul>
       <li>Fixed: <b>Labelixa: Validate ZPL</b> was missing from the Tools and editor menus and validation findings were never shown, because <code>.zpl</code> files were opened as plain text underneath. Files now carry the ZPL language; lint while typing works too.</li>

@@ -37,7 +37,8 @@ label quota, only the request rate limit.
 | Setting | Default | Notes |
 |---|---|---|
 | API key | empty | Optional. Without a key the free, rate-limited anonymous tier is used. Kept in the IDE password safe, never in a settings file. |
-| Base URL | `https://api.labelixa.com` | Change only for a self-hosted deployment. |
+| Base URL | `https://api.labelixa.com` | Change only for a self-hosted deployment. Must be `https` (plain `http` only for `localhost`). |
+| Send the API key to this base URL | off | Needed only for a base URL that is not a Labelixa address; see below. |
 | Print density | 8 dots/mm | 8 = 203 dpi, 12 = 300 dpi, 24 = 600 dpi. |
 | Label width / height | 4 × 6 in | Used for preview and validation. |
 | Lint while typing | off | See above. |
@@ -51,6 +52,16 @@ shown. There is no telemetry, no account requirement and no local storage
 of your labels by the plugin. Requests carry a `User-Agent` and an
 `X-Client: jetbrains/<version>` header so the service can count plugin use
 in aggregate.
+
+**Where the API key goes.** The key is sent without asking only to
+`https://api.labelixa.com`, `https://labelixa.com` and
+`https://staging.labelixa.com`. For any other base URL (your own
+deployment, a proxy) requests go out without the key until you tick
+**Send the API key to this base URL**; the permission is stored for that
+exact address and does not follow the setting to a new one. The key is
+never sent over plain `http` to another machine, and redirects are not
+followed — the API never redirects, and following one would hand the key
+to whichever host the redirect names.
 
 ## Building from source
 

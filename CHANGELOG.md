@@ -5,6 +5,23 @@ documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-09-28
+
+### Security
+- Redirects are no longer followed. Java's HTTP client re-sends custom
+  headers on a redirect, so the `X-API-Key` header would have been carried
+  to whatever host (or plain `http` address) the redirect pointed at. A
+  redirect is now reported as an error naming its target.
+- The base URL must be `https`; plain `http` is accepted only for
+  `localhost` and loopback addresses. A base URL with a user name or
+  password in it is refused.
+- The API key is sent without asking only to `https://api.labelixa.com`,
+  `https://labelixa.com` and `https://staging.labelixa.com`. Any other
+  base URL gets requests without the key unless **Send the API key to
+  this base URL** is ticked in the settings; that permission is kept for
+  that exact address only. If you use your own deployment with a key,
+  tick the box once after updating.
+
 ## [0.1.1] - 2026-09-25
 
 ### Fixed
