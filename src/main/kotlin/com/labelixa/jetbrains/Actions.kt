@@ -81,6 +81,6 @@ class ValidateAction : AnAction(), DumbAware {
         val file = e.getData(CommonDataKeys.PSI_FILE) ?: return
         val vf = file.virtualFile ?: return
         LintState.get().force(vf.path)
-        DaemonCodeAnalyzer.getInstance(project).restart(file)
+        PlatformCompat.restartHighlighting(DaemonCodeAnalyzer.getInstance(project), file)
     }
 }

@@ -1,17 +1,21 @@
 package com.labelixa.jetbrains
 
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 
 /** Small helpers shared by the actions and the annotator. */
 object Plugin {
     const val ID = "com.labelixa.zpl"
 
-    val version: String
-        get() = PluginManagerCore.getPlugin(PluginId.getId(ID))?.version ?: "0.0.0"
+    /**
+     * Read from the plugin's own descriptor: the platform's lookup by plugin
+     * ID (`PluginManagerCore.getPlugin`) is internal API on current IDEs.
+     */
+    val version: String by lazy { descriptorVersion(Plugin::class.java.getResource("/META-INF/plugin.xml")?.readText()) }
+
+    internal fun descriptorVersion(xml: String?): String =
+        xml?.let { Regex("<version>\\s*([^<\\s]+)\\s*</version>").find(it)?.groupValues?.get(1) } ?: "0.0.0"
 
     fun client(): LabelixaClient {
         val s = LabelixaSettings.get()

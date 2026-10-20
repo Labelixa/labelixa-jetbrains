@@ -105,4 +105,11 @@ class CoreTest {
         // past the end of the document: not drawn
         assertNull(ZplExternalAnnotator.range(3, { starts[it] }, { ends[it] }, text.length, f(7, 0)))
     }
+
+    @Test
+    fun `plugin version comes from the descriptor`() {
+        assertEquals("0.1.4", Plugin.descriptorVersion("<idea-plugin><id>x</id><version> 0.1.4 </version></idea-plugin>"))
+        assertEquals("0.0.0", Plugin.descriptorVersion("<idea-plugin/>"))
+        assertEquals("0.0.0", Plugin.descriptorVersion(null))
+    }
 }

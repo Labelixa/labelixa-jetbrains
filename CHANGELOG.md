@@ -5,6 +5,28 @@ documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-10-19
+
+### Changed
+- No deprecated or internal platform API on current IDEs. Plugin Verifier
+  reported, against IntelliJ IDEA 2024.3 to 2026.3, a deprecated
+  `CredentialAttributes` constructor (API key storage), the deprecated
+  `DaemonCodeAnalyzer.restart(PsiFile)` (Validate ZPL) and the internal
+  `PluginManagerCore.getPlugin` (plugin version in the `User-Agent`). The key
+  storage call now binds to the plain constructor, re-highlighting uses
+  `restart(PsiFile, reason)` where the platform has it, and the version is
+  read from the plugin's own descriptor. Behaviour is unchanged; the stored
+  API key is kept (same service name).
+
+## [0.1.3] - 2026-10-19
+
+### Changed
+- Built with Kotlin's `jvmDefault = no-compatibility` mode. The compiler no
+  longer copies the platform's `ToolWindowFactory` default methods into the
+  preview tool window class, so Plugin Verifier reports no deprecated,
+  experimental or internal API usage (previously 4, 2 and 6 against
+  IntelliJ IDEA 2024.1). Behaviour is unchanged.
+
 ## [0.1.2] - 2026-09-28
 
 ### Security

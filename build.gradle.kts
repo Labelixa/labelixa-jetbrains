@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -7,7 +8,7 @@ plugins {
 }
 
 group = "com.labelixa"
-version = "0.1.2"
+version = "0.1.4"
 
 repositories {
     mavenCentral()
@@ -35,6 +36,12 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+        // Without this, Kotlin copies every default method of a platform
+        // interface (e.g. ToolWindowFactory.getAnchor/getIcon/manage) into
+        // the implementing class as a delegating override. Plugin Verifier
+        // then reports those copies as overrides of deprecated, experimental
+        // and internal API although the source overrides none of them.
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
     }
 }
 tasks.withType<JavaCompile>().configureEach {

@@ -1,6 +1,5 @@
 package com.labelixa.jetbrains
 
-import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
 import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
@@ -60,7 +59,7 @@ class LabelixaSettings : PersistentStateComponent<LabelixaSettings.State> {
         }
 
     private fun credentialAttributes() =
-        CredentialAttributes(generateServiceName("Labelixa", "apiKey"))
+        PlatformCompat.credentialAttributes(generateServiceName("Labelixa", "apiKey"))
 
     companion object {
         fun get(): LabelixaSettings = service()
